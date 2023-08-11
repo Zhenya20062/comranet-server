@@ -20,7 +20,7 @@ export class BaseRepo {
         this.messageRef = collection(this.db, "messages");
       }
     
-      protected async findUserDataById(id:string):Promise<QueryDocumentSnapshot> {
+      public async findUserDataById(id:string):Promise<QueryDocumentSnapshot> {
         const userQuery = query(this.usersRef, where(documentId(), "==", id));
         var snapshot = await getDocs(userQuery);
         if (snapshot.size == 0)

@@ -1,10 +1,14 @@
 import {
   CollectionReference,
   DocumentData,
+  DocumentSnapshot,
   Firestore,
+  Timestamp,
   addDoc,
   collection,
+  doc,
   documentId,
+  getDoc,
   getDocs,
   query,
   setDoc,
@@ -22,25 +26,79 @@ import { v4 as uuidv4 } from "uuid";
 import { MessageData } from "../entities/message_data";
 import { MessageUserData } from "../entities/user_data";
 import { BaseRepo } from "./base_repo";
+import { timeStamp } from "console";
 
 export class ChatRepo extends BaseRepo {
-
   constructor(db: Firestore, storage: FirebaseStorage) {
-    super(db,storage);
+    super(db, storage);
   }
 
-  public async getChatList(userId: string): Promise<Array<ChatData>> {
-    const chatList: Array<ChatData> = [];
+  public async getChatData(chatId:string):Promise<ChatData> {
+    const chatInfoSnapshot = await getDoc(doc(this.chatRef, chatId));
+    
+    const chatInfo = new ChatData();
+    chatInfo.chat_id = chatInfoSnapshot.id;
+    chatInfo.photo_url = chatInfoSnapshot.data()!["photo_url"];
+    chatInfo.title = chatInfoSnapshot.data()!["chat_name"];
+    const lastMessageId = chatInfoSnapshot.data()!["last_message_id"];
+    let lastMessage: MessageData | undefined;
+
+    if (lastMessageId != null) {
+      const lastMessagesQuery = query(
+        collection(this.db, "messages"),
+        where(documentId(), "==", lastMessageId)
+      );
+      const lls = (await getDocs(lastMessagesQuery)).docs[0];
+      const userSnapshot = await this.findUserDataById(
+        lls.data()["sender_id"]
+      );
+      const userData = new MessageUserData(
+        userSnapshot.id,
+        userSnapshot.data()["username"],
+        userSnapshot.data()["photo_url"]
+      );
+      lastMessage = new MessageData(
+        lls.data()["data"],
+        lls.data()["type"],
+        lls.data()["timestamp"].toMillis(),
+        lls.data()["chat_id"],
+        userData,
+        lls.id
+      );
+    }
+
+    chatInfo.last_message_data = lastMessage;
+
+    return chatInfo;
+  }
+
+  public async getAvailableChatId(userId: string): Promise<string[]> {
     const availableChatsQuery = query(
       this.membersRef,
       where("user_id", "==", userId)
     );
     const availableChatsSnapshot = await getDocs(availableChatsQuery);
-    if (availableChatsSnapshot.size == 0) return chatList;
+    if (availableChatsSnapshot.size == 0) return [];
 
     const availableChatsId: Array<string> = availableChatsSnapshot.docs.map(
       (value) => value.data()["chat_id"]
     );
+    return availableChatsId;
+  }
+
+  public async getChatList(userId: string): Promise<Array<ChatData>> {
+    const chatList: Array<ChatData> = [];
+    // const availableChatsQuery = query(
+    //   this.membersRef,
+    //   where("user_id", "==", userId)
+    // );
+    // const availableChatsSnapshot = await getDocs(availableChatsQuery);
+    // if (availableChatsSnapshot.size == 0) return chatList;
+
+    // const availableChatsId: Array<string> = availableChatsSnapshot.docs.map(
+    //   (value) => value.data()["chat_id"]
+    // );
+    const availableChatsId:string[] = await this.getAvailableChatId(userId);
     const chatListQuery = query(
       this.chatRef,
       where(documentId(), "in", availableChatsId)
@@ -51,12 +109,10 @@ export class ChatRepo extends BaseRepo {
     //<----Perhaps it's excessive
     const lastMessagesQuery = query(
       this.chatRef,
-      where("chat_id", "in", availableChatsId)
+      where(documentId(), "in", availableChatsId)
     );
     const lastMessagesSnapshot = await getDocs(lastMessagesQuery);
     //----->
-
-  
 
     for (let i = 0; i < chatListSnapshot.size; i++) {
       const chatData: ChatData = new ChatData();
@@ -67,22 +123,32 @@ export class ChatRepo extends BaseRepo {
       let lastMessageSnapshot = null;
       let lastMessage: MessageData | undefined;
       if (lastMessagesSnapshot.size > 0) {
-        lastMessageSnapshot = lastMessagesSnapshot.docs
-          .find((el) => el.data()["chat_id"] == chatId)!;
-        const userSnapshot = await this.findUserDataById(lastMessageSnapshot.data()["sender_id"]);
-        const userData = new MessageUserData(
-          userSnapshot.id,
-          userSnapshot.data()["username"],
-          userSnapshot.data()["photo_url"]
-        );
-        lastMessage = new MessageData(
-          lastMessageSnapshot.data()["data"],
-          lastMessageSnapshot.data()["type"],
-          lastMessageSnapshot.data()["timestamp"],
-          lastMessageSnapshot.data()["chat_id"],
-          userData,
-          lastMessageSnapshot.id,
-        );
+        lastMessageSnapshot = lastMessagesSnapshot.docs.find(
+          (el) => el.id == chatId
+        )!;
+        if (lastMessageSnapshot.data()["last_message_id"] != null) {
+          const lls = await this.getLastMessage(
+            lastMessageSnapshot.data()["last_message_id"]
+          );
+
+          const userSnapshot = await this.findUserDataById(
+            lls.data()["sender_id"]
+          );
+          const userData = new MessageUserData(
+            userSnapshot.id,
+            userSnapshot.data()["username"],
+            userSnapshot.data()["photo_url"]
+          );
+
+          lastMessage = new MessageData(
+            lls.data()["data"],
+            lls.data()["type"],
+            lls.data()["timestamp"].toMillis(),
+            lls.data()["chat_id"],
+            userData,
+            lls.id
+          );
+        }
       }
 
       chatData.last_message_data = lastMessage;
@@ -90,6 +156,10 @@ export class ChatRepo extends BaseRepo {
     }
 
     return chatList;
+  }
+
+  async getLastMessage(messageId: string): Promise<any> {
+    return await getDoc(doc(this.messageRef, messageId));
   }
 
   public async addChat(
@@ -119,5 +189,21 @@ export class ChatRepo extends BaseRepo {
         chat_id: chatId,
       });
     });
+  }
+
+  public async getChatUserNotifications(
+    chat_id: string
+  ): Promise<Array<string>> {
+    const membersSnapshot = (
+      await getDocs(query(this.membersRef, where("chat_id", "==", chat_id)))
+    ).docs;
+    const userIdList = membersSnapshot.map((e) => e.data()["user_id"]);
+    const usersSnapshot = (
+      await getDocs(query(this.usersRef, where(documentId(), "in", userIdList)))
+    ).docs;
+    const res = usersSnapshot
+      .map((e) => e.data()["notification_id"])
+      .filter((e) => e != null);
+    return res;
   }
 }

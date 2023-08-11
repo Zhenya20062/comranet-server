@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   GetMessageData,
   MessageData,
+  MessageDataWithNotification,
   SendFirebaseMessageData,
 } from "../entities/message_data";
 import { MessageUserData } from "../entities/user_data";
@@ -85,14 +86,14 @@ export class MessageRepo extends BaseRepo {
     return messages;
   }
 
-  public async addMessage(data: any): Promise<MessageData> {
+  public async addMessage(data: any, chat_id:string): Promise<MessageDataWithNotification> {
     console.log(data);
     const timestamp = Timestamp.now();
     const messageFirebaseData = new SendFirebaseMessageData(
       data["content"],
       data["type"],
       timestamp,
-      data["chat_id"],
+      chat_id,
       data["user_id"]
     );
     const uploadedMessageId = uuidv4();
@@ -112,6 +113,6 @@ export class MessageRepo extends BaseRepo {
       uploadedMessageId,
     );
 
-    return messageData;
+    return new MessageDataWithNotification(messageData, data["notification_id"]);
   }
 }

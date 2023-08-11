@@ -53,4 +53,12 @@ export class MessageUserData {
   public static fromSnapshot(snapshot:QueryDocumentSnapshot) :MessageUserData{
     return new MessageUserData(snapshot.id,snapshot.data()["username"],snapshot.data()["photo_url"]);
   }
+
+  toJson(){
+    return {
+      "id":this.id,
+      "username":this.username,
+      "photo_url":this.photo_url,
+    };
+  }
 }
