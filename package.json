@@ -2,7 +2,7 @@
   "name": "comranet",
   "version": "0.1.0",
   "description": "The official backend server for Comranet",
-  "main": "test2/dist/index.js",
+  "main": "./test2/dist/index.js",
   "scripts": {
     "build": "yarn && tsc",
     "start": "node ./test/dist/index.js"
