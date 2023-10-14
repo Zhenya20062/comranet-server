@@ -230,7 +230,7 @@ expressApp.post("/messages/:chat_id/", async (_req, res) => {
     console.log(msg);
     const messageData: MessageDataWithNotification =
       await messageRepo.addMessage(msg, _req.params.chat_id);
-    res.status(200).send(JSON.stringify(messageData));
+    res.status(200).send(JSON.stringify(messageData.message_data));
 
     let notifications = await chatRepo.getChatUserNotifications(
       messageData.message_data.chat_id
