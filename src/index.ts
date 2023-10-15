@@ -134,6 +134,24 @@ expressApp.get("/users/reset-password/", async (req, res) => {
   }
 });
 
+expressApp.patch(
+  "/update_username/:login/:new_name",
+  async (req, res) => {
+    try {
+      let new_name: string = req.params.new_name;
+      let login: string = req.params.login;
+      await myAuth.updateUserName(login, new_name);
+      res.sendStatus(200).end();
+    } catch (error: any) {
+      if (error instanceof ComranetError || error instanceof FirebaseError) {
+        res.status(401).send(error.message).end();
+      } else {
+        res.sendStatus(500).end();
+      }
+      console.log(error);
+    }
+  }
+);
 expressApp.get("/users/all", async (req, res) => {
   try {
     const data = await myAuth.getAllUsers();

@@ -13,6 +13,7 @@ import {
   CollectionReference,
   DocumentData,
   getDoc,
+  QueryDocumentSnapshot,
 } from "@firebase/firestore";
 import {
   FirebaseStorage,
@@ -41,12 +42,22 @@ export class UserRepo {
   }
 
   private async findUserDataByLogin(login:string):Promise<UserFirestore> {
+    var snapshot = await this.checkLoginExistence(login);
+    return snapshot.data() as UserFirestore;
+  }
+
+  private async checkLoginExistence(login:string):Promise<QueryDocumentSnapshot<DocumentData>> {
     const userQuery = query(this.usersRef, where("login", "==", login));
     var snapshot = await getDocs(userQuery);
     if (snapshot.size == 0)
       throw new ComranetError("Логин не существует");
 
-    return snapshot.docs[0].data() as UserFirestore;
+      return snapshot.docs[0];
+  }
+
+  private async findUserIdByLogin(login:string):Promise<string> {
+    var snapshot = await this.checkLoginExistence(login);
+return snapshot.id;
   }
 
   private async findUserDataById(id:string):Promise<UserFirestore> {
@@ -147,10 +158,7 @@ export class UserRepo {
     login: string,
     notificationId: string
   ): Promise<void> {
-    const q = query(this.usersRef, where("login", "==", login));
-    var snapshot = await getDocs(q);
-    if (snapshot.size == 0) throw new ComranetError("Не существующий логин " + login);
-    const userId = snapshot.docs[0].id;
+    const userId = await this.findUserIdByLogin(login);
     await updateDoc(doc(this.db, "users", userId), {
       'notification_id': notificationId,
     });
@@ -170,6 +178,16 @@ export class UserRepo {
     await sendPasswordResetEmail(this.auth, data.email);
     return;
   }
+
+  public async updateUserName(login:string, newName:string):Promise<void> {
+    if (login.trim().length == 0) throw new ComranetError("Пустое имя недопустимо");
+
+    const userId = await this.findUserIdByLogin(login);
+    await updateDoc(doc(this.db, "users", userId), {
+      'username': newName,
+    });
+  }
+
 
 
   public async getAllUsers():Promise<Array<GetUserData>> {
