@@ -263,6 +263,23 @@ expressApp.post("/messages/:chat_id/", async (_req, res) => {
   }
 });
 
+expressApp.get("/stickers/",async function(req,res){
+
+  try{
+    const stickers:Array<string> = await featureRepo.getStickers();
+
+    res.status(200).send(stickers);
+
+  }catch(error:any) {
+    if (error instanceof ComranetError || error instanceof FirebaseError) {
+      res.status(401).send(error.message).end();
+    } else {
+      res.sendStatus(500).end();
+    }
+    console.log(error.message);
+  }
+});
+
 expressApp.ws("/chats/new/:user_id/", async function (ws, _req) {
   ws.on("error", function (error) {
     console.log(error.message);

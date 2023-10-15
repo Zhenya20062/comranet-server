@@ -11,19 +11,21 @@ import {
   query,
   where,
 } from "@firebase/firestore";
-import { FirebaseStorage } from "@firebase/storage";
+import { FirebaseStorage, ListResult, StorageReference, getDownloadURL, listAll, ref } from "@firebase/storage";
 import { AppInfo } from "../entities/app_info";
 
 export class FeatureRepo {
   private db: Firestore;
   private storage: FirebaseStorage;
   private appRef: CollectionReference<DocumentData>;
+  private stickerRef: StorageReference;
 
   constructor(db: Firestore, storage: FirebaseStorage) {
     this.db = db;
     this.storage = storage;
 
     this.appRef = collection(this.db, "additional");
+    this.stickerRef = ref(this.storage, `stickers/`);
   }
 
   public async getAppInfo(): Promise<AppInfo> {
@@ -32,5 +34,13 @@ export class FeatureRepo {
     
     data.news = data.news.replace(new RegExp(/\\n/gi), '\n' );
     return data;
+  }
+
+
+  public async getStickers():Promise<Array<string>> {
+
+   const res:ListResult =  await listAll(this.stickerRef);
+   const urls = await Promise.all(res.items.map((item) => getDownloadURL(item)));
+  return urls;
   }
 }
