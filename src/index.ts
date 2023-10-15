@@ -309,33 +309,4 @@ expressApp.ws("/chats/new/:user_id/", async function (ws, _req) {
       );
     }
   );
-  // ws.on("message", async function (msg) {
-  //   console.log(msg);
-  //   const json = JSON.parse(msg.toString());
-  //   const messageData: MessageDataWithNotification =
-  //     await messageRepo.addMessage(json, _req.params.chat_id);
-  //   ws.send(JSON.stringify(messageData.message_data));
-
-  //   let notifications = await chatRepo.getChatUserNotifications(
-  //     messageData.message_data.chat_id
-  //   );
-  //   notifications = notifications.filter(
-  //     (e) => e != messageData.notification_id
-  //   );
-  //   console.log(notifications.toString());
-  //   if (notifications.length == 0) return;
-
-  //   const req = http.request(options);
-  //   const notif = JSON.stringify({
-  //     app_id: process.env.ONE_SIGNAL_APP_ID,
-  //     include_player_ids: notifications,
-  //     contents: {
-  //       en: JSON.stringify(messageData.message_data),
-  //       ru: JSON.stringify(messageData.message_data),
-  //     },
-  //     name: "Euzhene Corp.",
-  //   });
-  //   req.write(notif);
-  //   req.end();
-  // });
 });
