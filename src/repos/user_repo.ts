@@ -244,17 +244,18 @@ export class UserRepo {
     if (normalizedUserInfo.avatar != null || userInfo.removeAvatar)
       avatarUrl = await this.updatePhoto(normalizedUserInfo.avatar, userId);
 
-    let userData: Map<string, string> = new Map<string, string>();
+    let userData: Map<string, string|undefined> = new Map();
 
-    if (avatarUrl?.length == 0) userData.set("photo_url", avatarUrl);
+    if (avatarUrl?.length != 0) userData.set("photo_url", avatarUrl);
     if (normalizedUserInfo.email != null)
       userData.set("email", normalizedUserInfo.email);
     if (normalizedUserInfo.login != null)
       userData.set("login", normalizedUserInfo.login);
     if (normalizedUserInfo.username != null)
       userData.set("username", normalizedUserInfo.username);
-    
-    await updateDoc(doc(this.db, "users", userId), JSON.parse(JSON.stringify( userData)));
+      const js = JSON.stringify(Object.fromEntries(userData))
+      const obj = JSON.parse(js);
+    await updateDoc(doc(this.db, "users", userId), obj);
   }
 
   private async normalizeUserInfo(
