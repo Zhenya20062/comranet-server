@@ -5,6 +5,7 @@ import {
   Timestamp,
   addDoc,
   collection,
+  deleteDoc,
   doc,
   documentId,
   endAt,
@@ -23,10 +24,10 @@ import { FirebaseStorage } from "@firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 
 import {
-  GetMessageData,
   MessageData,
   MessageDataWithNotification,
   SendFirebaseMessageData,
+  UpdateMessageData,
 } from "../entities/message_data";
 import { MessageUserData } from "../entities/user_data";
 import { BaseRepo } from "./base_repo";
@@ -34,6 +35,19 @@ import { BaseRepo } from "./base_repo";
 export class MessageRepo extends BaseRepo {
   constructor(db: Firestore, storage: FirebaseStorage) {
     super(db, storage);
+  }
+
+  public async editMessage(messageId:string, messageData:UpdateMessageData):Promise<void> {
+    await this.findUserDataById(messageData.user_id);
+    await updateDoc(doc(this.db, "messages", messageId), {
+      data:messageData.data,
+      edited:true,
+    });
+  }
+
+  public async deleteMessage(messageId:string, userId:string|undefined):Promise<void> {
+    await this.findUserDataById(userId);
+    await deleteDoc(doc(this.db,"messages",messageId));
   }
 
   public async getMessages(
@@ -78,7 +92,8 @@ export class MessageRepo extends BaseRepo {
         json["timestamp"].toMillis(),
         json["chat_id"],
         userData,
-        messageSnap.docs[i].id
+        messageSnap.docs[i].id,
+        json["edited"] ?? false,
       );
       messages.push(message);
     }
@@ -111,6 +126,7 @@ export class MessageRepo extends BaseRepo {
       messageFirebaseData.chat_id,
       userData,
       uploadedMessageId,
+      false,
     );
 
     return new MessageDataWithNotification(messageData, data["notification_id"]);

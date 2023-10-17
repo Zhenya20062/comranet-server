@@ -82,15 +82,6 @@ export class UserRepo {
     return snapshot.id;
   }
 
-  private async findUserDataById(id: string): Promise<UserFirestore> {
-    const userQuery = query(this.usersRef, where(documentId(), "==", id));
-    var snapshot = await getDocs(userQuery);
-    if (snapshot.size == 0)
-      throw new ComranetError("Пользователь не существует");
-
-    return snapshot.docs[0].data() as UserFirestore;
-  }
-
   public async login(userLogin: UserLogin): Promise<UserData> {
     var userId;
     if (userLogin.login.includes("@")) {

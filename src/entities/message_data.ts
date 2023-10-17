@@ -8,6 +8,7 @@ export class MessageData {
   chat_id!: string;
   user_data!: MessageUserData;
   message_id!: string;
+  edited!:boolean;
 
   constructor(
     content: string,
@@ -15,7 +16,8 @@ export class MessageData {
     timestamp: number,
     chat_id: string,
     user_data: MessageUserData,
-    message_id: string
+    message_id: string,
+    edited:boolean,
   ) {
     this.content = content;
     this.type = type;
@@ -23,6 +25,7 @@ export class MessageData {
     this.chat_id = chat_id;
     this.user_data = user_data;
     this.message_id = message_id;
+    this.edited = edited;
   }
 
   toJson() {
@@ -33,6 +36,7 @@ export class MessageData {
       "chat_id": this.chat_id,
       "user_data": this.user_data.toJson(),
       "message_id": this.message_id,
+      "edited":this.edited,
     };
   }
 }
@@ -69,18 +73,23 @@ export class SendFirebaseMessageData {
   }
 }
 
-export class GetMessageData {
-  content!: string;
-  type!: string;
-  chat_id!: string;
-  user_id!: string;
+// export class GetMessageData {
+//   content!: string;
+//   type!: string;
+//   chat_id!: string;
+//   user_id!: string;
 
-  constructor(content: string, type: string, chat_id: string, user_id: string) {
-    this.content = content;
-    this.type = type;
-    this.chat_id = chat_id;
-    this.user_id = user_id;
-  }
+//   constructor(content: string, type: string, chat_id: string, user_id: string) {
+//     this.content = content;
+//     this.type = type;
+//     this.chat_id = chat_id;
+//     this.user_id = user_id;
+//   }
+// }
+
+export class UpdateMessageData {
+  data!:string;
+  user_id!:string;
 }
 
 export class MessageDataWithNotification {

@@ -32,6 +32,7 @@ import { MessageRepo } from "./repos/message_repo";
 import {
   MessageData,
   MessageDataWithNotification,
+  UpdateMessageData,
 } from "./entities/message_data";
 import expressWs from "express-ws";
 
@@ -204,6 +205,34 @@ expressApp.post("/chats/", upload.single("chat_photo"), async (req, res) => {
     let file = req.file?.buffer;
     await chatRepo.addChat(chatInfo, file);
     res.sendStatus(200);
+  } catch (error: any) {
+    if (error instanceof ComranetError || error instanceof FirebaseError) {
+      res.status(401).send(error.message).end();
+    } else {
+      res.sendStatus(500).end();
+    }
+    console.log(error.message);
+  }
+});
+
+expressApp.delete("/messages/:id/", async (req, res) => {
+  try {
+    await messageRepo.deleteMessage(req.params.id,req.body["user_id"]);
+    res.status(200).send();
+  } catch (error: any) {
+    if (error instanceof ComranetError || error instanceof FirebaseError) {
+      res.status(401).send(error.message).end();
+    } else {
+      res.sendStatus(500).end();
+    }
+    console.log(error.message);
+  }
+});
+
+expressApp.patch("/messages/:id/", async (req, res) => {
+  try {
+    await messageRepo.editMessage(req.params.id,req.body as UpdateMessageData);
+    res.status(200).send();
   } catch (error: any) {
     if (error instanceof ComranetError || error instanceof FirebaseError) {
       res.status(401).send(error.message).end();

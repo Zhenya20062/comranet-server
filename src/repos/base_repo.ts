@@ -20,7 +20,8 @@ export class BaseRepo {
         this.messageRef = collection(this.db, "messages");
       }
     
-      public async findUserDataById(id:string):Promise<QueryDocumentSnapshot> {
+      public async findUserDataById(id:string|undefined):Promise<QueryDocumentSnapshot> {
+        if (id == null) throw new ComranetError("Пустой айди юзера");
         const userQuery = query(this.usersRef, where(documentId(), "==", id));
         var snapshot = await getDocs(userQuery);
         if (snapshot.size == 0)

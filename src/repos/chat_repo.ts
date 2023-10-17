@@ -63,7 +63,8 @@ export class ChatRepo extends BaseRepo {
         lls.data()["timestamp"].toMillis(),
         lls.data()["chat_id"],
         userData,
-        lls.id
+        lls.id,
+        lls.data()["edited"]??false,
       );
     }
 
@@ -146,7 +147,8 @@ export class ChatRepo extends BaseRepo {
             lls.data()["timestamp"].toMillis(),
             lls.data()["chat_id"],
             userData,
-            lls.id
+            lls.id,
+            lls.data()["edited"]??false,
           );
         }
       }
