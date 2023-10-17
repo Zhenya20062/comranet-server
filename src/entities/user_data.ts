@@ -39,6 +39,15 @@ export class GetUserData {
   photo_url?: string;
 }
 
+export class UpdateUserData {
+  login?: string;
+  password?: string;
+  avatar?: Buffer;
+  email?: string;
+  username?: string;
+  removeAvatar?:boolean = false;
+}
+
 export class MessageUserData {
   id!: string;
   username!: string;

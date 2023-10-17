@@ -21,6 +21,8 @@ import multer from "multer";
 import {
   ConfirmUserData,
   MessageUserData,
+  UpdateUserData,
+  UserData,
   UserLogin,
 } from "./entities/user_data";
 import { FeatureRepo } from "./repos/feature_repo";
@@ -135,12 +137,12 @@ expressApp.get("/users/reset-password/", async (req, res) => {
 });
 
 expressApp.patch(
-  "/update_username/:login/:new_name",
+  "/user/:id/", upload.single("avatar"),
   async (req, res) => {
     try {
-      let new_name: string = req.params.new_name;
-      let login: string = req.params.login;
-      await myAuth.updateUserName(login, new_name);
+      let userInfo = req.body as UpdateUserData;
+      userInfo.avatar = req.file?.buffer;
+      await myAuth.updateUserInfo(req.params.id, userInfo);
       res.sendStatus(200).end();
     } catch (error: any) {
       if (error instanceof ComranetError || error instanceof FirebaseError) {
@@ -152,6 +154,7 @@ expressApp.patch(
     }
   }
 );
+
 expressApp.get("/users/all", async (req, res) => {
   try {
     const data = await myAuth.getAllUsers();
