@@ -9,6 +9,7 @@ import {
   where,
   documentId,
   getDocs,
+  limit,
 } from "@firebase/firestore";
 import { FirebaseStorage, getStorage } from "@firebase/storage";
 
@@ -336,6 +337,7 @@ expressApp.ws("/chats/new/:user_id/", async function (ws, _req) {
   });
 
   const userId = _req.params.user_id;
+  await messageRepo.findUserDataById(userId);
 
   onSnapshot(
     query(collection(db, "chat_members"), where("user_id", "==", userId)),
@@ -359,4 +361,29 @@ expressApp.ws("/chats/new/:user_id/", async function (ws, _req) {
       );
     }
   );
+});
+
+expressApp.ws("/chats/:chat_id/:user_id/", async function (ws, _req) {
+  ws.on("error", function (error) {
+    console.log(error.message);
+  });
+
+  const userId = _req.params.user_id;
+  const chatId = _req.params.chat_id;
+  await messageRepo.findUserDataById(userId);
+  onSnapshot(query(collection(db, "messages"),where("chat_id", "==", chatId),limit(1)),async(querySnapshot)=> {
+    querySnapshot.docChanges().forEach(async (change)=>{
+      let json = change.doc.data();
+
+      const userSnapshot = await messageRepo.findUserDataById(json["sender_id"]);
+
+      const userData = new MessageUserData(
+        userSnapshot.id,
+        userSnapshot.data()["username"],
+        userSnapshot.data()["photo_url"]
+      );
+      const message = new MessageData(json["data"], json["type"], json["timestamp"].toMillis(), json["chat_id"],userData, change.doc.id, json["edited"] ?? change.type=='modified');
+      ws.send(JSON.stringify(message));
+    })
+  });
 });
