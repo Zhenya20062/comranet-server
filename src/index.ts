@@ -10,6 +10,10 @@ import {
   documentId,
   getDocs,
   limit,
+  orderBy,
+  DocumentSnapshot,
+  SnapshotListenOptions,
+  Timestamp
 } from "@firebase/firestore";
 import { FirebaseStorage, getStorage } from "@firebase/storage";
 
@@ -370,8 +374,11 @@ expressApp.ws("/chats/:chat_id/:user_id/", async function (ws, _req) {
 
   const userId = _req.params.user_id;
   const chatId = _req.params.chat_id;
+  
   await messageRepo.findUserDataById(userId);
-  onSnapshot(query(collection(db, "messages"),where("chat_id", "==", chatId),limit(1)),async(querySnapshot)=> {
+  const dayInMillis = 86400000;
+  const timestamp = Timestamp.fromMillis(Timestamp.now().toMillis()-dayInMillis);
+  onSnapshot(query(collection(db, "messages"),where("chat_id", "==", chatId),where("timestamp", ">=", timestamp), orderBy('timestamp','desc')),async(querySnapshot)=> {
     querySnapshot.docChanges().forEach(async (change)=>{
       let json = change.doc.data();
 
